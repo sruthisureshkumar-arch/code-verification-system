@@ -13,8 +13,8 @@ export default function App() {
             </div>
             <div className="nav-links">
                 <button className="btn-submit" style={{ opacity: 1 }}>Submit (React)</button>
-                <a href="http://localhost:4200/list"><button className="btn-run">Run (Angular)</button></a>
-                <a href="http://localhost:4200/stats"><button className="btn-stats">Stats (Angular)</button></a>
+                <a href="#"><button className="btn-run">Run (Angular)</button></a>
+                <a href="#"><button className="btn-stats">Stats (Angular)</button></a>
             </div>
             <TaskForm />
         </div>
