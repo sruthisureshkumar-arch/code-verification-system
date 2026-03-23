@@ -6,7 +6,7 @@ export default function TaskStats() {
     useEffect(() => {
         async function fetchTasks() {
             try {
-                let resp = await fetch("http://localhost:5000/api/tasks/stats")
+                let resp = await fetch("https://code-verification-backend.onrender.com/api/tasks/stats")
                 let data = await resp.json()
                 setTasks(data.data || data)
             } catch (error) { console.error("Error fetching stats:", error) }

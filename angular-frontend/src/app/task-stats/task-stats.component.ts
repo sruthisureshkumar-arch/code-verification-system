@@ -31,7 +31,7 @@ export class TaskStatsComponent implements OnInit {
   constructor(private http: HttpClient) { }
 
   ngOnInit() {
-    this.http.get<any>('http://localhost:5000/api/tasks/stats').subscribe({
+    this.http.get<any>('https://code-verification-backend.onrender.com/api/tasks/stats').subscribe({
       next: (data) => {
         this.stats = data.data || data;
         this.totalTasks = this.stats.length;

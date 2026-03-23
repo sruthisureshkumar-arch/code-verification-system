@@ -12,7 +12,7 @@ export default function TaskForm() {
         setLoading(true)
         setResult(null)
         try {
-            let resp = await fetch("http://localhost:5000/api/tasks", {
+            let resp = await fetch("https://code-verification-backend.onrender.com/api/tasks", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name, language, command: code })

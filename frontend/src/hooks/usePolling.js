@@ -10,7 +10,7 @@ export const usePolling = (executionId, interval = 1000) => {
 
         const poll = async () => {
             try {
-                let response = await fetch(`http://localhost:5000/api/executions/${executionId}`)
+                let response = await fetch(`https://code-verification-backend.onrender.com/api/executions/${executionId}`)
                 let dataPayload = await response.json()
                 if (!response.ok) throw new Error('Polling failed')
                 let responseData = dataPayload.data

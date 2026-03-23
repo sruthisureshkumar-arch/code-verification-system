@@ -36,7 +36,7 @@ import { CommonModule } from '@angular/common';
 export class TaskListComponent implements OnInit {
     tasks: any[] = [];
     results: any = {};
-    private apiUrl = 'http://localhost:5000/api';
+    private apiUrl = 'https://code-verification-backend.onrender.com/api';
 
     constructor(private http: HttpClient) { }
 

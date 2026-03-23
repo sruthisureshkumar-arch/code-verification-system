@@ -6,7 +6,7 @@ export default function TaskList() {
 
     async function getFromServer() {
         try {
-            let resp = await fetch("http://localhost:5000/api/tasks")
+            let resp = await fetch("https://code-verification-backend.onrender.com/api/tasks")
             if (!resp.ok) throw new Error("Server not reachable")
             let data = await resp.json()
             setArr(data.data || data)
@@ -16,13 +16,13 @@ export default function TaskList() {
     async function runVerification(taskId) {
         setResults(prev => ({ ...prev, [taskId]: { status: "running" } }))
         try {
-            let resp = await fetch(`http://localhost:5000/api/executions/trigger/${taskId}`, { method: "POST" })
+            let resp = await fetch(`https://code-verification-backend.onrender.com/api/executions/trigger/${taskId}`, { method: "POST" })
             let data = await resp.json()
             let execId = data.data._id
             let attempts = 0
             const poll = async () => {
                 try {
-                    let r = await fetch(`http://localhost:5000/api/executions/${execId}`)
+                    let r = await fetch(`https://code-verification-backend.onrender.com/api/executions/${execId}`)
                     let execData = await r.json()
                     let exec = execData.data
                     if (exec.status === "completed" || exec.status === "failed") {
@@ -39,7 +39,7 @@ export default function TaskList() {
 
     async function clearAll() {
         try {
-            await fetch("http://localhost:5000/api/tasks", { method: "DELETE" })
+            await fetch("https://code-verification-backend.onrender.com/api/tasks", { method: "DELETE" })
             setArr([])
             setResults({})
         } catch (error) { console.log("Error clearing", error) }
