@@ -1,7 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
-import { BehaviorSubject } from 'rxjs';
 
 @Component({
     selector: 'app-task-list',
@@ -12,48 +11,47 @@ import { BehaviorSubject } from 'rxjs';
       <h2>Code History
         <button class="btn-outline" style="margin-left: 10px" (click)="clearAll()">Clear All</button>
       </h2>
-      <ng-container *ngIf="tasks$ | async as taskList">
-        <p *ngIf="taskList.length === 0">No submissions yet.</p>
-        <ul style="list-style: none; padding: 0">
-          <li *ngFor="let task of taskList" style="margin-bottom: 8px; border-bottom: 1px solid #ddd; padding-bottom: 8px">
-            <strong>{{ task.name }}</strong> ({{ task.language || 'javascript' }})
-            &mdash;
-            <button class="btn-outline" (click)="runVerification(task._id)">Run &amp; Verify</button>
-            <div *ngIf="results[task._id]"
-                 [class]="'result-box ' + (results[task._id].status === 'completed' ? 'pass' : results[task._id].status === 'failed' ? 'fail' : '')">
-              <span *ngIf="results[task._id].status === 'running'">Running...</span>
-              <span *ngIf="results[task._id].status === 'completed'">
-                Passed<br><br>{{ results[task._id].output || '(no output)' }}
-              </span>
-              <span *ngIf="results[task._id].status === 'failed'">
-                Failed<br><br>{{ results[task._id].error || results[task._id].output || 'unknown error' }}
-              </span>
-            </div>
-          </li>
-        </ul>
-      </ng-container>
+      <p *ngIf="tasks.length === 0">No submissions yet.</p>
+      <ul style="list-style: none; padding: 0" *ngIf="tasks.length > 0">
+        <li *ngFor="let task of tasks" style="margin-bottom: 8px; border-bottom: 1px solid #ddd; padding-bottom: 8px">
+          <strong>{{ task.name }}</strong> ({{ task.language || 'javascript' }})
+          &mdash;
+          <button class="btn-outline" (click)="runVerification(task._id)">Run &amp; Verify</button>
+          <div *ngIf="results[task._id]"
+               [class]="'result-box ' + (results[task._id].status === 'completed' ? 'pass' : results[task._id].status === 'failed' ? 'fail' : '')">
+            <span *ngIf="results[task._id].status === 'running'">Running...</span>
+            <span *ngIf="results[task._id].status === 'completed'">
+              Passed<br><br>{{ results[task._id].output || '(no output)' }}
+            </span>
+            <span *ngIf="results[task._id].status === 'failed'">
+              Failed<br><br>{{ results[task._id].error || results[task._id].output || 'unknown error' }}
+            </span>
+          </div>
+        </li>
+      </ul>
     </div>
   `,
     styles: []
 })
 export class TaskListComponent implements OnInit {
-    private tasksSubject = new BehaviorSubject<any[]>([]);
-    tasks$ = this.tasksSubject.asObservable();
+    tasks: any[] = [];
     results: any = {};
     private apiUrl = 'https://code-verification-backend.onrender.com/api';
 
-    constructor(private http: HttpClient) { }
+    constructor(private http: HttpClient, private cdr: ChangeDetectorRef) { }
 
     ngOnInit() { this.getTasks(); }
 
     getTasks() {
         this.http.get<any>(this.apiUrl + '/tasks').subscribe({
             next: (res) => {
-                console.log('Backend response:', res);
+                console.log('Backend response received. Data length:', res?.data?.length);
                 if (res && res.data && Array.isArray(res.data)) {
-                    this.tasksSubject.next(res.data);
+                    this.tasks = [...res.data];
+                    this.cdr.detectChanges();
                 } else if (Array.isArray(res)) {
-                    this.tasksSubject.next(res);
+                    this.tasks = [...res];
+                    this.cdr.detectChanges();
                 }
             },
             error: (err) => { console.log('Error fetching tasks', err); }
