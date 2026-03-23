@@ -45,23 +45,26 @@ export class TaskListComponent implements OnInit {
     getTasks() {
         this.http.get<any>(this.apiUrl + '/tasks').subscribe({
             next: (res) => {
-                const data = res.data || res;
-                this.tasks.set(Array.isArray(data) ? data : []);
-                this.cdr.detectChanges();
+                this.zone.run(() => {
+                    const data = res.data || res;
+                    this.tasks.set(Array.isArray(data) ? data : []);
+                });
             },
             error: (err) => { console.log('Error fetching tasks', err); }
         });
     }
 
     runVerification(taskId: string) {
-        this.results.update(prev => ({ ...prev, [taskId]: { status: 'running' } }));
-        this.cdr.detectChanges();
+        this.zone.run(() => {
+            this.results.update(prev => ({ ...prev, [taskId]: { status: 'running' } }));
+        });
 
         this.http.post<any>(this.apiUrl + '/executions/trigger/' + taskId, {}).subscribe({
             next: (data) => { this.pollResult(taskId, data.data._id, 0); },
             error: (err) => {
-                this.results.update(prev => ({ ...prev, [taskId]: { status: 'failed', error: 'Server error' } }));
-                this.cdr.detectChanges();
+                this.zone.run(() => {
+                    this.results.update(prev => ({ ...prev, [taskId]: { status: 'failed', error: 'Server error' } }));
+                });
             }
         });
     }
@@ -69,16 +72,16 @@ export class TaskListComponent implements OnInit {
     private pollResult(taskId: string, execId: string, attempts: number) {
         this.http.get<any>(this.apiUrl + '/executions/' + execId).subscribe({
             next: (data) => {
-                let exec = data.data;
-                if (exec.status === 'completed' || exec.status === 'failed') {
-                    this.results.update(prev => ({ ...prev, [taskId]: exec }));
-                    this.cdr.detectChanges();
-                } else if (attempts < 20) {
-                    setTimeout(() => this.pollResult(taskId, execId, attempts + 1), 1000);
-                } else {
-                    this.results.update(prev => ({ ...prev, [taskId]: { status: 'failed', error: 'Timed out.' } }));
-                    this.cdr.detectChanges();
-                }
+                this.zone.run(() => {
+                    let exec = data.data;
+                    if (exec.status === 'completed' || exec.status === 'failed') {
+                        this.results.update(prev => ({ ...prev, [taskId]: exec }));
+                    } else if (attempts < 20) {
+                        setTimeout(() => this.pollResult(taskId, execId, attempts + 1), 1000);
+                    } else {
+                        this.results.update(prev => ({ ...prev, [taskId]: { status: 'failed', error: 'Timed out.' } }));
+                    }
+                });
             },
             error: (err) => { console.log(err); }
         });
@@ -87,9 +90,10 @@ export class TaskListComponent implements OnInit {
     clearAll() {
         this.http.delete(this.apiUrl + '/tasks').subscribe({
             next: () => {
-                this.tasks.set([]);
-                this.results.set({});
-                this.cdr.detectChanges();
+                this.zone.run(() => {
+                    this.tasks.set([]);
+                    this.results.set({});
+                });
             },
             error: (err: any) => { console.log('Error clearing', err); }
         });

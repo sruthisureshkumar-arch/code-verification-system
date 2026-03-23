@@ -13,8 +13,8 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 
       <div class="nav-links">
         <a href="https://code-verification-system.vercel.app"><button class="btn-submit">Submit</button></a>
-        <a routerLink="/list" routerLinkActive="active-link"><button class="btn-run">Run</button></a>
-        <a routerLink="/stats" routerLinkActive="active-link"><button class="btn-stats">Stats</button></a>
+        <button class="btn-run" routerLink="/list" routerLinkActive="active-link">Run</button>
+        <button class="btn-stats" routerLink="/stats" routerLinkActive="active-link">Stats</button>
       </div>
 
       <router-outlet />
