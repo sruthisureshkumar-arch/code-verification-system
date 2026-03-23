@@ -40,31 +40,33 @@ export class TaskListComponent implements OnInit {
 
     constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private zone: NgZone) { }
 
-    ngOnInit() { this.getTasks(); }
+    ngOnInit() {
+        this.getTasks();
+        // Fallback: if list is still empty after 1.5s, try one more time
+        setTimeout(() => { if (this.tasks().length === 0) this.getTasks(); }, 1500);
+    }
 
     getTasks() {
         this.http.get<any>(this.apiUrl + '/tasks').subscribe({
             next: (res) => {
-                this.zone.run(() => {
-                    const data = res.data || res;
-                    this.tasks.set(Array.isArray(data) ? data : []);
-                });
+                const data = res.data || res;
+                this.tasks.set(Array.isArray(data) ? data : []);
+                this.cdr.detectChanges();
+                this.cdr.markForCheck();
             },
             error: (err) => { console.log('Error fetching tasks', err); }
         });
     }
 
     runVerification(taskId: string) {
-        this.zone.run(() => {
-            this.results.update(prev => ({ ...prev, [taskId]: { status: 'running' } }));
-        });
+        this.results.update(prev => ({ ...prev, [taskId]: { status: 'running' } }));
+        this.cdr.detectChanges();
 
         this.http.post<any>(this.apiUrl + '/executions/trigger/' + taskId, {}).subscribe({
             next: (data) => { this.pollResult(taskId, data.data._id, 0); },
             error: (err) => {
-                this.zone.run(() => {
-                    this.results.update(prev => ({ ...prev, [taskId]: { status: 'failed', error: 'Server error' } }));
-                });
+                this.results.update(prev => ({ ...prev, [taskId]: { status: 'failed', error: 'Server error' } }));
+                this.cdr.detectChanges();
             }
         });
     }
@@ -72,16 +74,16 @@ export class TaskListComponent implements OnInit {
     private pollResult(taskId: string, execId: string, attempts: number) {
         this.http.get<any>(this.apiUrl + '/executions/' + execId).subscribe({
             next: (data) => {
-                this.zone.run(() => {
-                    let exec = data.data;
-                    if (exec.status === 'completed' || exec.status === 'failed') {
-                        this.results.update(prev => ({ ...prev, [taskId]: exec }));
-                    } else if (attempts < 20) {
-                        setTimeout(() => this.pollResult(taskId, execId, attempts + 1), 1000);
-                    } else {
-                        this.results.update(prev => ({ ...prev, [taskId]: { status: 'failed', error: 'Timed out.' } }));
-                    }
-                });
+                let exec = data.data;
+                if (exec.status === 'completed' || exec.status === 'failed') {
+                    this.results.update(prev => ({ ...prev, [taskId]: exec }));
+                    this.cdr.detectChanges();
+                } else if (attempts < 20) {
+                    setTimeout(() => this.pollResult(taskId, execId, attempts + 1), 1000);
+                } else {
+                    this.results.update(prev => ({ ...prev, [taskId]: { status: 'failed', error: 'Timed out.' } }));
+                    this.cdr.detectChanges();
+                }
             },
             error: (err) => { console.log(err); }
         });
@@ -90,10 +92,9 @@ export class TaskListComponent implements OnInit {
     clearAll() {
         this.http.delete(this.apiUrl + '/tasks').subscribe({
             next: () => {
-                this.zone.run(() => {
-                    this.tasks.set([]);
-                    this.results.set({});
-                });
+                this.tasks.set([]);
+                this.results.set({});
+                this.cdr.detectChanges();
             },
             error: (err: any) => { console.log('Error clearing', err); }
         });

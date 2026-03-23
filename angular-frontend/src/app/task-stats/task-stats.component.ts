@@ -31,13 +31,18 @@ export class TaskStatsComponent implements OnInit {
   constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private zone: NgZone) { }
 
   ngOnInit() {
+    this.fetchStats();
+    // Fallback try for instant load
+    setTimeout(() => { if (this.stats().length === 0) this.fetchStats(); }, 1500);
+  }
+
+  fetchStats() {
     this.http.get<any>('https://code-verification-backend.onrender.com/api/tasks/stats').subscribe({
       next: (data) => {
-        this.zone.run(() => {
-          const statsData = data.data || data;
-          this.stats.set(Array.isArray(statsData) ? statsData : []);
-          this.cdr.detectChanges();
-        });
+        const statsData = data.data || data;
+        this.stats.set(Array.isArray(statsData) ? statsData : []);
+        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: (err) => { console.error('Error fetching stats:', err); }
     });
