@@ -10,14 +10,14 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
         <h1>Code Verification System</h1>
         <p>Submit code in JavaScript, C, C++, Java or MIPS and verify if it works</p>
         <p style="font-size: 12px; color: #666; margin-top: 4px;">
-          Built with <strong>React</strong> (Submit) &amp; <strong>Angular</strong> (Run &amp; Stats)
+          Submit and Run Code
         </p>
       </div>
 
       <div class="nav-links">
-        <a href="http://localhost:5173"><button class="btn-submit">Submit (React)</button></a>
-        <a routerLink="/list" routerLinkActive="active-link"><button class="btn-run">Run (Angular)</button></a>
-        <a routerLink="/stats" routerLinkActive="active-link"><button class="btn-stats">Stats (Angular)</button></a>
+        <a href="http://localhost:5173"><button class="btn-submit">Submit</button></a>
+        <a routerLink="/list" routerLinkActive="active-link"><button class="btn-run">Run</button></a>
+        <a routerLink="/stats" routerLinkActive="active-link"><button class="btn-stats">Stats</button></a>
       </div>
 
       <router-outlet />
