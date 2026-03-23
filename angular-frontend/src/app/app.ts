@@ -15,7 +15,7 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
       </div>
 
       <div class="nav-links">
-        <a href="http://localhost:5173"><button class="btn-submit">Submit</button></a>
+        <a href="https://code-verification-system.vercel.app"><button class="btn-submit">Submit</button></a>
         <a routerLink="/list" routerLinkActive="active-link"><button class="btn-run">Run</button></a>
         <a routerLink="/stats" routerLinkActive="active-link"><button class="btn-stats">Stats</button></a>
       </div>

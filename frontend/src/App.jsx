@@ -13,8 +13,8 @@ export default function App() {
             </div>
             <div className="nav-links">
                 <button className="btn-submit" style={{ opacity: 1 }}>Submit</button>
-                <a href="#"><button className="btn-run">Run</button></a>
-                <a href="#"><button className="btn-stats">Stats</button></a>
+                <a href="https://code-verification-system-angular.vercel.app/list"><button className="btn-run">Run</button></a>
+                <a href="https://code-verification-system-angular.vercel.app/stats"><button className="btn-stats">Stats</button></a>
             </div>
             <TaskForm />
         </div>
