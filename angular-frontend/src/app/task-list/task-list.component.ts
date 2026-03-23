@@ -44,8 +44,17 @@ export class TaskListComponent implements OnInit {
 
     getTasks() {
         this.http.get<any>(this.apiUrl + '/tasks').subscribe({
-            next: (data) => { this.tasks = data.data || data; },
-            error: (err) => { console.log('Error', err); }
+            next: (res) => {
+                console.log('Backend response:', res);
+                if (res && res.data && Array.isArray(res.data)) {
+                    this.tasks = res.data;
+                } else if (Array.isArray(res)) {
+                    this.tasks = res;
+                } else if (res && Array.isArray(res.tasks)) {
+                    this.tasks = res.tasks;
+                }
+            },
+            error: (err) => { console.log('Error fetching tasks', err); }
         });
     }
 
