@@ -33,9 +33,11 @@ export class TaskStatsComponent implements OnInit {
   ngOnInit() {
     this.http.get<any>('https://code-verification-backend.onrender.com/api/tasks/stats').subscribe({
       next: (data) => {
-        const statsData = data.data || data;
-        this.stats.set(Array.isArray(statsData) ? statsData : []);
-        this.cdr.detectChanges();
+        this.zone.run(() => {
+          const statsData = data.data || data;
+          this.stats.set(Array.isArray(statsData) ? statsData : []);
+          this.cdr.detectChanges();
+        });
       },
       error: (err) => { console.error('Error fetching stats:', err); }
     });
