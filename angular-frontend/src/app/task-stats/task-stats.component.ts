@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, NgZone, signal, computed } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, NgZone, signal, computed, ApplicationRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 
@@ -28,12 +28,12 @@ export class TaskStatsComponent implements OnInit {
   totalTasks = computed(() => this.stats().length);
   completedTasks = computed(() => this.stats().filter((t: any) => t.successfulExecutions > 0).length);
 
-  constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private zone: NgZone) { }
+  constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private zone: NgZone, private appRef: ApplicationRef) { }
 
   ngOnInit() {
     this.fetchStats();
-    // Fallback try for instant load
-    setTimeout(() => { if (this.stats().length === 0) this.fetchStats(); }, 1500);
+    // Guaranteed initial load poke
+    setTimeout(() => this.fetchStats(), 500);
   }
 
   fetchStats() {
@@ -42,7 +42,7 @@ export class TaskStatsComponent implements OnInit {
         const statsData = data.data || data;
         this.stats.set(Array.isArray(statsData) ? statsData : []);
         this.cdr.detectChanges();
-        this.cdr.markForCheck();
+        this.appRef.tick(); // Force UI update
       },
       error: (err) => { console.error('Error fetching stats:', err); }
     });

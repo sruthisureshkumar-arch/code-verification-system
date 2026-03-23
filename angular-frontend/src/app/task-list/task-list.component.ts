@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, NgZone, signal } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, NgZone, signal, ApplicationRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 
@@ -38,12 +38,12 @@ export class TaskListComponent implements OnInit {
     results = signal<any>({});
     private apiUrl = 'https://code-verification-backend.onrender.com/api';
 
-    constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private zone: NgZone) { }
+    constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private zone: NgZone, private appRef: ApplicationRef) { }
 
     ngOnInit() {
         this.getTasks();
-        // Fallback: if list is still empty after 1.5s, try one more time
-        setTimeout(() => { if (this.tasks().length === 0) this.getTasks(); }, 1500);
+        // Guaranteed initial data check
+        setTimeout(() => this.getTasks(), 500); 
     }
 
     getTasks() {
@@ -52,7 +52,7 @@ export class TaskListComponent implements OnInit {
                 const data = res.data || res;
                 this.tasks.set(Array.isArray(data) ? data : []);
                 this.cdr.detectChanges();
-                this.cdr.markForCheck();
+                this.appRef.tick(); // Force immediate global render
             },
             error: (err) => { console.log('Error fetching tasks', err); }
         });
@@ -60,13 +60,13 @@ export class TaskListComponent implements OnInit {
 
     runVerification(taskId: string) {
         this.results.update(prev => ({ ...prev, [taskId]: { status: 'running' } }));
-        this.cdr.detectChanges();
+        this.appRef.tick();
 
         this.http.post<any>(this.apiUrl + '/executions/trigger/' + taskId, {}).subscribe({
             next: (data) => { this.pollResult(taskId, data.data._id, 0); },
             error: (err) => {
                 this.results.update(prev => ({ ...prev, [taskId]: { status: 'failed', error: 'Server error' } }));
-                this.cdr.detectChanges();
+                this.appRef.tick();
             }
         });
     }
@@ -77,12 +77,12 @@ export class TaskListComponent implements OnInit {
                 let exec = data.data;
                 if (exec.status === 'completed' || exec.status === 'failed') {
                     this.results.update(prev => ({ ...prev, [taskId]: exec }));
-                    this.cdr.detectChanges();
+                    this.appRef.tick();
                 } else if (attempts < 20) {
                     setTimeout(() => this.pollResult(taskId, execId, attempts + 1), 1000);
                 } else {
                     this.results.update(prev => ({ ...prev, [taskId]: { status: 'failed', error: 'Timed out.' } }));
-                    this.cdr.detectChanges();
+                    this.appRef.tick();
                 }
             },
             error: (err) => { console.log(err); }
