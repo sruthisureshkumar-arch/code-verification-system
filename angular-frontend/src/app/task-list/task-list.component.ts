@@ -87,7 +87,11 @@ export class TaskListComponent implements OnInit {
 
     clearAll() {
         this.http.delete(this.apiUrl + '/tasks').subscribe({
-            next: () => { this.tasksSubject.next([]); this.results = {}; },
+            next: () => {
+                this.tasks = [];
+                this.cdr.detectChanges();
+                this.results = {};
+            },
             error: (err: any) => { console.log('Error clearing', err); }
         });
     }
