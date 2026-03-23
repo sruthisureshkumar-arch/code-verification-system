@@ -19,12 +19,12 @@ import { CommonModule } from '@angular/common';
           <button class="btn-outline" (click)="runVerification(task._id)">Run &amp; Verify</button>
           <div *ngIf="results[task._id]"
                [class]="'result-box ' + (results[task._id].status === 'completed' ? 'pass' : results[task._id].status === 'failed' ? 'fail' : '')">
-            <span *ngIf="results[task._id].status === 'running'">running...</span>
+            <span *ngIf="results[task._id].status === 'running'">Running...</span>
             <span *ngIf="results[task._id].status === 'completed'">
-              Super! No errors in code.<br><br>{{ results[task._id].output || '(no output)' }}
+              Passed<br><br>{{ results[task._id].output || '(no output)' }}
             </span>
             <span *ngIf="results[task._id].status === 'failed'">
-              Oops! Execution terminated with errors.<br><br>{{ results[task._id].error || results[task._id].output || 'unknown error' }}
+              Failed<br><br>{{ results[task._id].error || results[task._id].output || 'unknown error' }}
             </span>
           </div>
         </li>
@@ -68,6 +68,8 @@ export class TaskListComponent implements OnInit {
                     this.results[taskId] = exec;
                 } else if (attempts < 10) {
                     setTimeout(() => this.pollResult(taskId, execId, attempts + 1), 1000);
+                } else {
+                    this.results[taskId] = { status: 'failed', error: 'Timed out waiting for execution result. Please try again.' };
                 }
             },
             error: (err) => { console.log(err); }

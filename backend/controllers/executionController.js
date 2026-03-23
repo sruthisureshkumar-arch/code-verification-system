@@ -3,12 +3,15 @@ import { exec } from 'child_process';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { ObjectId } from 'mongodb';
 import asyncHandler from 'express-async-handler';
 import { getDB } from '../config/db.js';
 import { AppError } from '../middleware/errorHandler.js';
 
-const MARS_JAR = path.join(path.dirname(new URL(import.meta.url).pathname), '..', 'Mars.jar');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const MARS_JAR = path.join(__dirname, '..', 'Mars.jar');
 
 function getCommand(lang, file) {
     if (lang === 'c') return `gcc "${file}.c" -o "${file}.out" && "${file}.out"`;
@@ -43,32 +46,50 @@ export const triggerExecution = asyncHandler(async (req, res, next) => {
 
     res.status(201).json({ success: true, data: { _id: insertedId, status: 'running' } });
 
-    const tmpBase = path.join(os.tmpdir(), 'code_' + insertedId + '_');
-    const tmpFile = tmpBase + getExt(lang);
+    // Safety timeout: mark as failed if execution doesn't complete within 15s
+    const safetyTimer = setTimeout(() => {
+        db.collection('executions').updateOne(
+            { _id: insertedId, status: 'running' },
+            { $set: { status: 'failed', error: 'Execution timed out (15s limit)', endTime: new Date(), durationMs: 15000, updatedAt: new Date() } }
+        ).catch(err => console.error('Safety timeout DB update failed:', err));
+    }, 15000);
 
-    fs.writeFile(tmpFile, task.command, function (err) {
-        if (err) {
-            db.collection('executions').updateOne({ _id: insertedId },
-                { $set: { status: 'failed', error: err.message, updatedAt: new Date() } });
-            return;
-        }
+    try {
+        const tmpBase = path.join(os.tmpdir(), 'code_' + insertedId + '_');
+        const tmpFile = tmpBase + getExt(lang);
 
-        exec(getCommand(lang, tmpBase), { timeout: 8000 }, function (error, stdout, stderr) {
-            const durationMs = new Date() - startTime;
-            fs.unlink(tmpFile, function () { });
+        fs.writeFile(tmpFile, task.command, function (err) {
+            if (err) {
+                clearTimeout(safetyTimer);
+                db.collection('executions').updateOne({ _id: insertedId },
+                    { $set: { status: 'failed', error: err.message, updatedAt: new Date() } });
+                return;
+            }
 
-            db.collection('executions').updateOne({ _id: insertedId }, {
-                $set: {
-                    status: error ? 'failed' : 'completed',
-                    output: stdout || '',
-                    error: error ? (stderr || error.message) : '',
-                    endTime: new Date(),
-                    durationMs,
-                    updatedAt: new Date()
-                }
+            exec(getCommand(lang, tmpBase), { timeout: 8000 }, function (error, stdout, stderr) {
+                clearTimeout(safetyTimer);
+                const durationMs = new Date() - startTime;
+                fs.unlink(tmpFile, function () { });
+
+                db.collection('executions').updateOne({ _id: insertedId }, {
+                    $set: {
+                        status: error ? 'failed' : 'completed',
+                        output: stdout || '',
+                        error: error ? (stderr || error.message) : '',
+                        endTime: new Date(),
+                        durationMs,
+                        updatedAt: new Date()
+                    }
+                }).catch(err => console.error('Execution DB update failed:', err));
             });
         });
-    });
+    } catch (err) {
+        clearTimeout(safetyTimer);
+        console.error('Unexpected execution error:', err);
+        db.collection('executions').updateOne({ _id: insertedId },
+            { $set: { status: 'failed', error: err.message || 'Unexpected server error', updatedAt: new Date() } }
+        ).catch(e => console.error('DB update after unexpected error failed:', e));
+    }
 });
 
 export const getExecution = asyncHandler(async (req, res, next) => {

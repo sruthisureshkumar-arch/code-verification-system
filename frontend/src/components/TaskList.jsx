@@ -28,6 +28,9 @@ export default function TaskList() {
                     if (exec.status === "completed" || exec.status === "failed") {
                         setResults(prev => ({ ...prev, [taskId]: exec }))
                     } else if (attempts < 10) { attempts++; setTimeout(poll, 1000) }
+                    else {
+                        setResults(prev => ({ ...prev, [taskId]: { status: "failed", error: "Timed out waiting for execution result. Please try again." } }))
+                    }
                 } catch (e) { console.log(e) }
             }
             poll()
@@ -61,10 +64,10 @@ export default function TaskList() {
                             {results[a._id] && (
                                 <div className={`result-box ${results[a._id].status === "completed" ? "pass" : results[a._id].status === "failed" ? "fail" : ""}`}>
                                     {results[a._id].status === "running"
-                                        ? "running..."
+                                        ? "Running..."
                                         : results[a._id].status === "completed"
-                                            ? `Super! No errors in code.\n\n${results[a._id].output || "(no output)"}`
-                                            : `Oops! Execution terminated with errors.\n\n${results[a._id].error || results[a._id].output || "unknown error"}`
+                                            ? `Passed\n\n${results[a._id].output || "(no output)"}`
+                                            : `Failed\n\n${results[a._id].error || results[a._id].output || "unknown error"}`
                                     }
                                 </div>
                             )}

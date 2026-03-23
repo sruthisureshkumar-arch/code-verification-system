@@ -8,10 +8,7 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
     <div class="app-container">
       <div class="header">
         <h1>Code Verification System</h1>
-        <p>Submit code in JavaScript, C, C++, Java or MIPS and verify if it works</p>
-        <p style="font-size: 12px; color: #666; margin-top: 4px;">
-          Submit and Run Code
-        </p>
+        <p>Submit code and verify if it runs correctly</p>
       </div>
 
       <div class="nav-links">

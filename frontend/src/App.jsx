@@ -6,13 +6,10 @@ export default function App() {
         <div className="app-container">
             <div className="header">
                 <h1>Code Verification System</h1>
-                <p>Submit code in JavaScript, C, C++, Java or MIPS and verify if it works</p>
-                <p style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}>
-                    Submit and Run Code
-                </p>
+                <p>Submit code and verify if it runs correctly</p>
             </div>
             <div className="nav-links">
-                <button className="btn-submit" style={{ opacity: 1 }}>Submit</button>
+                <button className="btn-submit">Submit</button>
                 <a href="https://code-verification-system-angular.vercel.app/list"><button className="btn-run">Run</button></a>
                 <a href="https://code-verification-system-angular.vercel.app/stats"><button className="btn-stats">Stats</button></a>
             </div>
