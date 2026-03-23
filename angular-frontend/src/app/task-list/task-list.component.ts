@@ -60,12 +60,16 @@ export class TaskListComponent implements OnInit {
     }
 
     runVerification(taskId: string) {
-        this.results[taskId] = { status: 'running' };
+        this.zone.run(() => {
+            this.results = { ...this.results, [taskId]: { status: 'running' } };
+            this.cdr.detectChanges();
+        });
+
         this.http.post<any>(this.apiUrl + '/executions/trigger/' + taskId, {}).subscribe({
             next: (data) => { this.pollResult(taskId, data.data._id, 0); },
             error: (err) => {
                 this.zone.run(() => {
-                    this.results[taskId] = { status: 'failed', output: 'Could not connect to server' };
+                    this.results = { ...this.results, [taskId]: { status: 'failed', error: 'Could not connect to server' } };
                     this.cdr.detectChanges();
                 });
             }
@@ -78,12 +82,12 @@ export class TaskListComponent implements OnInit {
                 this.zone.run(() => {
                     let exec = data.data;
                     if (exec.status === 'completed' || exec.status === 'failed') {
-                        this.results[taskId] = exec;
+                        this.results = { ...this.results, [taskId]: exec };
                         this.cdr.detectChanges();
-                    } else if (attempts < 10) {
+                    } else if (attempts < 15) {
                         setTimeout(() => this.pollResult(taskId, execId, attempts + 1), 1000);
                     } else {
-                        this.results[taskId] = { status: 'failed', error: 'Timed out.' };
+                        this.results = { ...this.results, [taskId]: { status: 'failed', error: 'Execution timed out.' } };
                         this.cdr.detectChanges();
                     }
                 });
