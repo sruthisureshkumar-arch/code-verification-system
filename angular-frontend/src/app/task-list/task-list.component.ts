@@ -1,14 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
-import { BehaviorSubject, map } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 
 @Component({
     selector: 'app-task-list',
     standalone: true,
     imports: [CommonModule],
     template: `
-    <div *ngIf="tasks$ | async as tasksArr">
+    <div *ngIf="tasks$ | async as tasksArr; else loading">
       <h2>Code History
         <button class="btn-outline" style="margin-left: 10px" (click)="clearAll()">Clear All</button>
       </h2>
@@ -18,7 +18,7 @@ import { BehaviorSubject, map } from 'rxjs';
           <strong>{{ task.name }}</strong> ({{ task.language || 'javascript' }})
           &mdash;
           <button class="btn-outline" (click)="runVerification(task._id)">Run &amp; Verify</button>
-          
+
           <ng-container *ngIf="results$ | async as resultsObj">
             <div *ngIf="resultsObj[task._id]"
                  [class]="'result-box ' + (resultsObj[task._id].status === 'completed' ? 'pass' : resultsObj[task._id].status === 'failed' ? 'fail' : '')">
@@ -34,16 +34,20 @@ import { BehaviorSubject, map } from 'rxjs';
         </li>
       </ul>
     </div>
+
+    <ng-template #loading>
+      <p>Loading tasks...</p>
+    </ng-template>
   `,
     styles: []
 })
 export class TaskListComponent implements OnInit {
-    private tasksSubject = new BehaviorSubject<any[]>([]);
+    private tasksSubject = new BehaviorSubject<any[] | null>(null); // null = loading, [] = empty
     tasks$ = this.tasksSubject.asObservable();
 
     private resultsSubject = new BehaviorSubject<any>({});
     results$ = this.resultsSubject.asObservable();
-    
+
     private apiUrl = 'https://code-verification-backend.onrender.com/api';
 
     constructor(private http: HttpClient) { }
@@ -55,10 +59,14 @@ export class TaskListComponent implements OnInit {
     getTasks() {
         this.http.get<any>(this.apiUrl + '/tasks').subscribe({
             next: (res) => {
+                console.log('API response:', res); // remove after confirming shape
                 const data = res.data || res;
                 this.tasksSubject.next(Array.isArray(data) ? data : []);
             },
-            error: (err) => { console.log('Error fetching tasks', err); }
+            error: (err) => {
+                console.log('Error fetching tasks', err);
+                this.tasksSubject.next([]); // stop loading spinner on error
+            }
         });
     }
 
@@ -78,7 +86,7 @@ export class TaskListComponent implements OnInit {
     private pollResult(taskId: string, execId: string, attempts: number) {
         this.http.get<any>(this.apiUrl + '/executions/' + execId).subscribe({
             next: (data) => {
-                let exec = data.data;
+                const exec = data.data;
                 const current = this.resultsSubject.value;
                 if (exec.status === 'completed' || exec.status === 'failed') {
                     this.resultsSubject.next({ ...current, [taskId]: exec });
