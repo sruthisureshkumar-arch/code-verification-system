@@ -50,7 +50,18 @@ export const getTaskStats = asyncHandler(async (req, res) => {
             }
         },
         {
-            $lookup: { from: 'tasks', localField: '_id', foreignField: '_id', as: 'taskInfo' }
+            $addFields: {
+                taskId: {
+                    $cond: {
+                        if: { $eq: [{ $type: '$_id' }, 'string'] },
+                        then: { $toObjectId: '$_id' },
+                        else: '$_id'
+                    }
+                }
+            }
+        },
+        {
+            $lookup: { from: 'tasks', localField: 'taskId', foreignField: '_id', as: 'taskInfo' }
         },
         { $unwind: '$taskInfo' },
         {
