@@ -1,18 +1,19 @@
-import { Component, OnInit, ChangeDetectorRef, NgZone, signal, computed, ApplicationRef } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
+import { BehaviorSubject, map } from 'rxjs';
 
 @Component({
   selector: 'app-task-stats',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="card">
+    <div class="card" *ngIf="statsInfos$ | async as info">
       <h2>Verification Stats</h2>
-      <p>Total experiments: {{ totalTasks() }}</p>
-      <p>With at least 1 pass: {{ completedTasks() }}</p>
-      <div *ngIf="stats().length > 0" style="margin-top: 12px">
-        <div *ngFor="let s of stats()" class="stat-row">
+      <p>Total experiments: {{ info.total }}</p>
+      <p>With at least 1 pass: {{ info.completed }}</p>
+      <div *ngIf="info.stats.length > 0" style="margin-top: 12px">
+        <div *ngFor="let s of info.stats" class="stat-row">
           <span style="flex: 1"><strong>{{ s.taskName }}</strong></span>
           <span style="margin-right: 12px">Runs: {{ s.totalExecutions }}</span>
           <span style="margin-right: 12px; color: green">Pass: {{ s.successfulExecutions }}</span>
@@ -24,25 +25,27 @@ import { CommonModule } from '@angular/common';
   styles: []
 })
 export class TaskStatsComponent implements OnInit {
-  stats = signal<any[]>([]);
-  totalTasks = computed(() => this.stats().length);
-  completedTasks = computed(() => this.stats().filter((t: any) => t.successfulExecutions > 0).length);
+  private statsSubject = new BehaviorSubject<any[]>([]);
+  
+  statsInfos$ = this.statsSubject.asObservable().pipe(
+      map(stats => ({
+          stats,
+          total: stats.length,
+          completed: stats.filter((t: any) => t.successfulExecutions > 0).length
+      }))
+  );
 
-  constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private zone: NgZone, private appRef: ApplicationRef) { }
+  constructor(private http: HttpClient) { }
 
   ngOnInit() {
     this.fetchStats();
-    // Guaranteed initial load poke
-    setTimeout(() => this.fetchStats(), 500);
   }
 
   fetchStats() {
     this.http.get<any>('https://code-verification-backend.onrender.com/api/tasks/stats').subscribe({
       next: (data) => {
-        this.zone.run(() => {
-            const statsData = data.data || data;
-            this.stats.set(Array.isArray(statsData) ? statsData : []);
-        });
+        const statsData = data.data || data;
+        this.statsSubject.next(Array.isArray(statsData) ? statsData : []);
       },
       error: (err) => { console.error('Error fetching stats:', err); }
     });
