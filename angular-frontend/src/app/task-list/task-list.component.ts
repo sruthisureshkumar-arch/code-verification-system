@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { BehaviorSubject, map } from 'rxjs';
@@ -43,10 +43,10 @@ export class TaskListComponent implements OnInit {
 
     private resultsSubject = new BehaviorSubject<any>({});
     results$ = this.resultsSubject.asObservable();
-    
+
     private apiUrl = 'https://code-verification-backend.onrender.com/api';
 
-    constructor(private http: HttpClient) { }
+    constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private zone: NgZone) { }
 
     ngOnInit() {
         this.getTasks();
@@ -55,8 +55,11 @@ export class TaskListComponent implements OnInit {
     getTasks() {
         this.http.get<any>(this.apiUrl + '/tasks').subscribe({
             next: (res) => {
-                const data = res.data || res;
-                this.tasksSubject.next(Array.isArray(data) ? data : []);
+                this.zone.run(() => {
+                    const data = res.data || res;
+                    this.tasksSubject.next(Array.isArray(data) ? data : []);
+                    this.cdr.detectChanges();
+                });
             },
             error: (err) => { console.log('Error fetching tasks', err); }
         });
