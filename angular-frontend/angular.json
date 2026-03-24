@@ -46,6 +46,9 @@
           "options": {
             "outputPath": "dist/angular-frontend",
             "index": "src/index.html",
+            "polyfills": [
+              "zone.js"
+            ],
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
             "assets": [
