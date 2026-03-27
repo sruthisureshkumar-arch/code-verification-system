@@ -17,7 +17,7 @@ function getCommand(lang, file) {
     if (lang === 'c') return `gcc "${file}.c" -o "${file}.out" && "${file}.out"`;
     if (lang === 'cpp') return `g++ "${file}.cpp" -o "${file}.out" && "${file}.out"`;
     if (lang === 'java') return `javac "${file}Main.java" && java -cp "${path.dirname(file)}" Main`;
-    if (lang === 'mips') return `java -jar "${MARS_JAR}" sm nc "${file}.asm"`;
+    if (lang === 'mips') return `java -jar "${MARS_JAR}" ae1 se1 sm nc "${file}.asm"`;
     return `node "${file}.js"`;
 }
 
@@ -75,7 +75,7 @@ export const triggerExecution = asyncHandler(async (req, res, next) => {
                     $set: {
                         status: error ? 'failed' : 'completed',
                         output: stdout || '',
-                        error: error ? (stderr || error.message) : '',
+                        error: error ? (stdout + '\n' + stderr).replace(/.*java\.util\.prefs.*\n.*/ig, '').trim() || error.message : '',
                         endTime: new Date(),
                         durationMs,
                         updatedAt: new Date()
