@@ -69,13 +69,21 @@ export const triggerExecution = asyncHandler(async (req, res, next) => {
             exec(getCommand(lang, tmpBase), { timeout: 8000 }, function (error, stdout, stderr) {
                 clearTimeout(safetyTimer);
                 const durationMs = new Date() - startTime;
-                fs.unlink(tmpFile, function () { });
+                let finalErrorStr = '';
+                if (error) {
+                    const cleanOutput = (stdout + '\n' + stderr).replace(/.*java\.util\.prefs.*\n.*/ig, '').trim();
+                    if (error.killed && (error.signal === 'SIGTERM' || error.signal === 'SIGKILL')) {
+                        finalErrorStr = cleanOutput || 'Execution timed out. Does your program contain an infinite loop or wait for input?';
+                    } else {
+                        finalErrorStr = cleanOutput || error.message;
+                    }
+                }
 
                 db.collection('executions').updateOne({ _id: insertedId }, {
                     $set: {
                         status: error ? 'failed' : 'completed',
                         output: stdout || '',
-                        error: error ? (stdout + '\n' + stderr).replace(/.*java\.util\.prefs.*\n.*/ig, '').trim() || error.message : '',
+                        error: finalErrorStr,
                         endTime: new Date(),
                         durationMs,
                         updatedAt: new Date()
